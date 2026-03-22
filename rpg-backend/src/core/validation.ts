@@ -121,6 +121,18 @@ export function validateAction(action: ActionRequest, state: GameState): void {
       throw new Error("INVALID_TALK_TARGET")
     }
   }
+
+  if (action.type === "DIALOGUE_CHOICE") {
+    if (!action.dialogue_tree_id || typeof action.dialogue_tree_id !== "string") {
+      throw new Error("INVALID_DIALOGUE_TREE")
+    }
+    if (!action.node_id || typeof action.node_id !== "string") {
+      throw new Error("INVALID_NODE_ID")
+    }
+    if (!action.option_id || typeof action.option_id !== "string") {
+      throw new Error("INVALID_OPTION_ID")
+    }
+  }
 }
 
 export function validateEvent(event: Event): boolean {
@@ -234,6 +246,34 @@ export function validateEvent(event: Event): boolean {
     case "QUEST_COMPLETED": {
       const payload = event.payload as { entity_id?: unknown; quest_id?: unknown }
       return typeof payload.entity_id === "string" && typeof payload.quest_id === "string"
+    }
+
+    case "DIALOGUE_STARTED":
+    case "DIALOGUE_CHOICE":
+    case "DIALOGUE_NODE_SHOWN":
+    case "DIALOGUE_ENDED": {
+      return typeof (event.payload as Record<string, unknown>)["player_id"] === "string" ||
+             typeof event.entity_id === "string"
+    }
+
+    case "FORAGE": {
+      return typeof event.entity_id === "string"
+    }
+
+    case "FORAGE_SUCCESS": {
+      const p = event.payload as { player_id?: unknown; item_id?: unknown }
+      return typeof p.player_id === "string" && typeof p.item_id === "string"
+    }
+
+    case "FORAGE_FAILED": {
+      const p = event.payload as { player_id?: unknown }
+      return typeof p.player_id === "string"
+    }
+
+    case "EFFECT_EXPIRED":
+    case "NPC_AGGROED":
+    case "ATTACK_ATTEMPT": {
+      return typeof event.entity_id === "string"
     }
 
     default:

@@ -1,67 +1,120 @@
 import { processQueue } from "../infrastructure/queue/actionQueue"
-import { loadLatestSnapshot } from "../infrastructure/eventStore/snapshotStore"
+import { loadLatestSnapshot, saveSnapshot } from "../infrastructure/eventStore/snapshotStore"
 import { loadEvents, appendEvents } from "../infrastructure/eventStore/eventStore"
 import { buildState, applyEvents } from "../domain/events/applyEvent"
 import { validateEvent } from "./validation"
 import { processRegen, processEffectTicks } from "../domain/systems/regenSystem"
 import { processNpcs } from "../domain/systems/npcSystem"
+import { processEffects } from "../domain/systems/effectSystem"
 import { processRespawn } from "../domain/systems/respawnSystem"
 import { GameState } from "../domain/entities/entity"
+import { broadcastStateUpdate } from "../infrastructure/websocket/wsServer"
 
 const TICK_INTERVAL_MS = 100
+const SNAPSHOT_EVERY_N_TICKS = 100
+const BROADCAST_EVERY_N_TICKS = 3  // Broadcast state every 300ms
 
-async function runTick(): Promise<void> {
-  try {
-    // 1. Load current state (snapshot + events)
-    const snapshot = await loadLatestSnapshot()
-    const baseState: GameState = snapshot ?? { tick: 0, entities: {}, effects: [] }
-    const events = await loadEvents(baseState.tick)
-    const state = buildState(baseState, events)
+// In-memory reference to active game state (single session for now)
+let activeState: GameState | null = null
 
-    // 2. Run regen, effect ticks, respawn, and NPC AI
-    const regenEvents = processRegen(state)
-    const effectEvents = processEffectTicks(state)
-    applyEvents(state, [...regenEvents, ...effectEvents])
+async function initializeState(): Promise<GameState> {
+  const snapshot = await loadLatestSnapshot()
+  const baseState: GameState = snapshot ?? {
+    tick: 0,
+    entities: {},
+    effects: [],
+    weather: "clear",
+    timeOfDay: 8
+  }
+  const events = await loadEvents(baseState.tick)
+  return buildState(baseState, events)
+}
 
-    const respawnEvents = processRespawn(state)
-    applyEvents(state, respawnEvents)
+async function runTick(state: GameState): Promise<{ state: GameState; systemEvents: unknown[] }> {
+  const tick = state.tick + 1
+  state.tick = tick
 
-    const npcEvents = processNpcs(state)
-    applyEvents(state, npcEvents)
+  // Advance time of day (1440 ticks = 1 day, 1 tick = ~6 seconds game-time)
+  state.timeOfDay = Math.floor((tick % 1440) / 60)
 
-    // 3. Persist resulting events
-    const allTickEvents = [
-      ...regenEvents,
-      ...effectEvents,
-      ...respawnEvents,
-      ...npcEvents
-    ].filter(validateEvent)
+  // Process regen and effect ticks
+  const regenEvents = processRegen(state)
+  const effectTickEvents = processEffectTicks(state)
+  applyEvents(state, [...regenEvents, ...effectTickEvents])
 
-    if (allTickEvents.length > 0) {
-      await appendEvents(allTickEvents)
-    }
-  } catch (err) {
-    console.error("Game loop tick error:", err)
+  // Process respawns
+  const respawnEvents = processRespawn(state)
+  applyEvents(state, respawnEvents)
+
+  // Process NPC autonomous actions
+  const npcEvents = processNpcs(state)
+  const validNpcEvents = npcEvents.filter(validateEvent)
+
+  // Process effect expiry
+  const effectEvents = processEffects(state)
+  const validEffectEvents = effectEvents.filter(validateEvent)
+
+  const systemEvents = [
+    ...regenEvents.filter(validateEvent),
+    ...effectTickEvents.filter(validateEvent),
+    ...respawnEvents.filter(validateEvent),
+    ...validNpcEvents,
+    ...validEffectEvents
+  ]
+
+  if (systemEvents.length > 0) {
+    applyEvents(state, [...validNpcEvents, ...validEffectEvents])
+    await appendEvents(systemEvents)
   }
 
-  // 4. Process any queued player actions
-  await processQueue()
+  // Auto-snapshot every N ticks
+  if (tick % SNAPSHOT_EVERY_N_TICKS === 0) {
+    await saveSnapshot(state)
+    console.log(`[GameLoop] Snapshot saved at tick ${tick}`)
+  }
+
+  return { state, systemEvents }
 }
 
 function startGameLoop(): NodeJS.Timeout {
+  let running = false
+
   return setInterval(async () => {
-    await runTick()
+    if (running) return
+    running = true
+
+    try {
+      if (!activeState) {
+        activeState = await initializeState()
+        console.log(`[GameLoop] Initialized at tick ${activeState.tick}`)
+      }
+
+      // Process player actions from queue
+      await processQueue(activeState)
+
+      // Run system tick
+      const { systemEvents } = await runTick(activeState)
+
+      // Broadcast state to WebSocket clients every N ticks
+      if (activeState.tick % BROADCAST_EVERY_N_TICKS === 0) {
+        broadcastStateUpdate(activeState, systemEvents)
+      }
+
+    } catch (err) {
+      console.error("[GameLoop] Tick error:", err)
+    } finally {
+      running = false
+    }
   }, TICK_INTERVAL_MS)
 }
 
-export { startGameLoop }
+export { startGameLoop, activeState }
 
-// Start the game loop and WebSocket server when run directly
+// Start the game loop and servers when run directly
 if (require.main === module) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("../infrastructure/websocket/wsServer")
-
+  const { startApiServer } = require("../infrastructure/api/server")
+  startApiServer()
   startGameLoop()
-
   console.log("Game loop started. Listening for actions...")
 }

@@ -367,6 +367,15 @@ export function applyEvent(state: GameState, event: Event): GameState {
       return state
     }
 
+    case "DIALOGUE_NODE_SHOWN":
+    case "NPC_AGGROED":
+    case "FORAGE_SUCCESS":
+    case "FORAGE_FAILED":
+    case "DIALOGUE_CHOICE": {
+      // Read-only notification events — no state mutation needed
+      return state
+    }
+
     case "DIALOGUE_STARTED": {
       const payload = event.payload as { player_id: string; npc_id: string }
       if (state.entities[payload.player_id]) {

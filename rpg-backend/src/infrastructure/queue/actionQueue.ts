@@ -1,4 +1,4 @@
-import { ActionRequest } from "../../domain/entities/entity"
+import { ActionRequest, GameState } from "../../domain/entities/entity"
 import { processAction } from "../../core/actionProcessor"
 
 // In-memory queue — suitable for single-process development.
@@ -9,11 +9,16 @@ export function enqueue(action: ActionRequest): void {
   queue.push(action)
 }
 
-export async function processQueue(): Promise<void> {
-  while (queue.length > 0) {
+export async function processQueue(state: GameState): Promise<void> {
+  // Drain at most 10 actions per tick to prevent starvation
+  const maxPerTick = 10
+  let processed = 0
+
+  while (queue.length > 0 && processed < maxPerTick) {
     const action = queue.shift()
     if (action) {
-      await processAction(action)
+      await processAction(action, state)
+      processed++
     }
   }
 }
