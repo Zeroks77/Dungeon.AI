@@ -1,0 +1,33 @@
+{
+  "name": "rpg-backend",
+  "version": "1.0.0",
+  "description": "AI-driven RPG backend engine",
+  "main": "dist/core/gameLoop.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/core/gameLoop.js",
+    "dev": "ts-node src/core/gameLoop.ts",
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "openai": "^4.0.0",
+    "pg": "^8.11.3",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
