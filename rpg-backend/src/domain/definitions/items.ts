@@ -231,6 +231,167 @@ export const ITEMS: Record<string, ItemDefinition> = {
     type: "misc", rarity: "common", weight: 0.5, value: 25,
     stackable: false, maxStack: 1
   },
+  // ── Neue Klassenwaffen ────────────────────────────────────────
+  longsword: {
+    id: "longsword", name: "Langschwert", description: "Edles Schwert des heiligen Kriegers.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 2.8, value: 60,
+    stackable: false, maxStack: 1,
+    stats: { attack: 13, damageType: "physical", critChance: 0.08, runeSlots: 2 }
+  },
+  bone_staff: {
+    id: "bone_staff", name: "Knochenstab", description: "Aus den Knochen gefallener Feinde gefertigt.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 1.8, value: 50,
+    stackable: false, maxStack: 1,
+    stats: { attack: 6, manaBonus: 20, damageType: "shadow", runeSlots: 2 }
+  },
+  great_axe: {
+    id: "great_axe", name: "Großaxt", description: "Wuchtige Zweihandaxt für den Berserker.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 6.0, value: 55, twoHanded: true,
+    stackable: false, maxStack: 1,
+    stats: { attack: 18, damageType: "physical", critChance: 0.12, critMultiplier: 2.8, runeSlots: 1 }
+  },
+  cursed_blade: {
+    id: "cursed_blade", name: "Verfluchte Klinge", description: "Eine mit dunkler Magie durchtränkte Waffe.",
+    type: "weapon", rarity: "rare", slot: "mainhand", weight: 2.0, value: 150, requiredLevel: 3,
+    stackable: false, maxStack: 1,
+    stats: { attack: 12, manaBonus: 15, damageType: "shadow", critChance: 0.1, runeSlots: 2 }
+  },
+  eldritch_focus: {
+    id: "eldritch_focus", name: "Eldritsch-Fokus", description: "Kanalisiert paktgebundene Magie.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 0.4, value: 70,
+    stackable: false, maxStack: 1,
+    stats: { attack: 4, manaBonus: 25, damageType: "arcane", runeSlots: 3 }
+  },
+  spirit_staff: {
+    id: "spirit_staff", name: "Geisterstab", description: "Verbindet den Träger mit der Geisterwelt.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 1.6, value: 55,
+    stackable: false, maxStack: 1,
+    stats: { attack: 5, manaBonus: 20, wisdomBonus: 1, damageType: "holy", runeSlots: 2 }
+  },
+  arcane_wrench: {
+    id: "arcane_wrench", name: "Arkan-Schraubenschlüssel", description: "Werkzeug und Waffe des Artifiziers.",
+    type: "weapon", rarity: "uncommon", slot: "mainhand", weight: 1.2, value: 45,
+    stackable: false, maxStack: 1,
+    stats: { attack: 7, manaBonus: 15, damageType: "arcane", runeSlots: 2 }
+  },
+  // ── Neue Rüstungen ────────────────────────────────────────────
+  dark_robes: {
+    id: "dark_robes", name: "Dunkle Roben", description: "Aus Schattenstoff gewebte Magierroben.",
+    type: "armor", rarity: "uncommon", slot: "chest", weight: 0.8, value: 60,
+    stackable: false, maxStack: 1,
+    stats: { defense: 2, manaBonus: 25, intelligenceBonus: 1 }
+  },
+  monk_robes: {
+    id: "monk_robes", name: "Mönchsgewand", description: "Leichtes Gewand für maximale Beweglichkeit.",
+    type: "armor", rarity: "common", slot: "chest", weight: 0.5, value: 20,
+    stackable: false, maxStack: 1,
+    stats: { defense: 3, dexterityBonus: 1, speed: 2 }
+  },
+  hide_armor: {
+    id: "hide_armor", name: "Feldrüstung", description: "Aus Tierfellen gefertigte Rüstung des Schamanen.",
+    type: "armor", rarity: "common", slot: "chest", weight: 2.0, value: 30,
+    stackable: false, maxStack: 1,
+    stats: { defense: 5, constitutionBonus: 1 }
+  },
+  dark_leather_armor: {
+    id: "dark_leather_armor", name: "Dunkles Ledergehäuse", description: "Nachtschwarz gefärbte Lederrüstung.",
+    type: "armor", rarity: "uncommon", slot: "chest", weight: 1.5, value: 55,
+    stackable: false, maxStack: 1,
+    stats: { defense: 4, dexterityBonus: 1, manaBonus: 10 }
+  },
+  fur_armor: {
+    id: "fur_armor", name: "Pelzrüstung", description: "Grobe Rüstung aus Monsterfellen für den Berserker.",
+    type: "armor", rarity: "common", slot: "chest", weight: 3.5, value: 25,
+    stackable: false, maxStack: 1,
+    stats: { defense: 6, constitutionBonus: 1, hpBonus: 10 }
+  },
+  light_armor: {
+    id: "light_armor", name: "Leichte Rüstung", description: "Verstärkte Lederrüstung mit Runenhalterungen.",
+    type: "armor", rarity: "common", slot: "chest", weight: 1.8, value: 35,
+    stackable: false, maxStack: 1,
+    stats: { defense: 4, dexterityBonus: 1, runeSlots: 2 }
+  },
+  half_plate: {
+    id: "half_plate", name: "Halbplattenrüstung", description: "Teilweise Plattenrüstung für den Hexklingenträger.",
+    type: "armor", rarity: "uncommon", slot: "chest", weight: 5.0, value: 90, requiredLevel: 3,
+    stackable: false, maxStack: 1,
+    stats: { defense: 8, strengthBonus: 1 }
+  },
+  handwraps: {
+    id: "handwraps", name: "Handwickel", description: "Verstärkte Bandagen für den Mönch.",
+    type: "armor", rarity: "common", slot: "hands", weight: 0.2, value: 10,
+    stackable: false, maxStack: 1,
+    stats: { attack: 3, defense: 1, dexterityBonus: 1, critChance: 0.05 }
+  },
+  // ── Neue Verbrauchsgüter & Sonstige ───────────────────────────
+  soul_shard: {
+    id: "soul_shard", name: "Seelensplitter", description: "Enthält die gefesselte Seele eines Wesens.",
+    type: "misc", rarity: "uncommon", weight: 0.1, value: 40,
+    stackable: true, maxStack: 20
+  },
+  herb_pouch: {
+    id: "herb_pouch", name: "Kräuterbeutel", description: "Gefüllt mit heilenden Waldkräutern.",
+    type: "misc", rarity: "common", weight: 0.3, value: 15,
+    stackable: false, maxStack: 1,
+    effects: [{ type: "heal", value: 20 }]
+  },
+  spirit_potion: {
+    id: "spirit_potion", name: "Geistertrank", description: "Stärkt die Verbindung zur Geisterwelt.",
+    type: "potion", rarity: "uncommon", weight: 0.3, value: 35,
+    stackable: true, maxStack: 5,
+    effects: [{ type: "restore_mana", value: 40 }, { type: "buff", attribute: "wisdom", value: 2, duration: 30 }]
+  },
+  totem_carving: {
+    id: "totem_carving", name: "Totem-Schnitzerei", description: "Handgefertigtes Totem aus Heiligem Holz.",
+    type: "misc", rarity: "common", weight: 0.4, value: 20,
+    stackable: false, maxStack: 1
+  },
+  war_paint: {
+    id: "war_paint", name: "Kriegsbemalung", description: "Schreckt Feinde ein und stärkt den Träger.",
+    type: "misc", rarity: "common", weight: 0.2, value: 12,
+    stackable: true, maxStack: 10,
+    effects: [{ type: "buff", attribute: "strength", value: 2, duration: 60 }]
+  },
+  construct_kit: {
+    id: "construct_kit", name: "Konstrukt-Bausatz", description: "Werkzeuge und Komponenten zum Bauen von Konstrukten.",
+    type: "misc", rarity: "uncommon", weight: 2.0, value: 50,
+    stackable: false, maxStack: 1
+  },
+  hex_focus: {
+    id: "hex_focus", name: "Hex-Fokus", description: "Verstärkt Flüche und Waffenmagie.",
+    type: "misc", rarity: "uncommon", weight: 0.3, value: 45,
+    stackable: false, maxStack: 1,
+    stats: { manaBonus: 20, charismaBonus: 1 }
+  },
+  // ── Neue Zauberbücher & Tomes ─────────────────────────────────
+  nature_tome: {
+    id: "nature_tome", name: "Naturzauber-Kompendium", description: "Druidische Weisheit über Naturmagie.",
+    type: "misc", rarity: "common", weight: 0.5, value: 25,
+    stackable: false, maxStack: 1
+  },
+  inspiration_tome: {
+    id: "inspiration_tome", name: "Inspirationsband", description: "Sammlung bardischer Lieder und Zauberformeln.",
+    type: "misc", rarity: "common", weight: 0.5, value: 25,
+    stackable: false, maxStack: 1
+  },
+  pact_tome: {
+    id: "pact_tome", name: "Pakttom", description: "Schwarzes Buch, das den Pakt mit dunklen Mächten besiegelt.",
+    type: "misc", rarity: "rare", weight: 0.6, value: 80,
+    stackable: false, maxStack: 1,
+    stats: { manaBonus: 30 }
+  },
+  rune_tome: {
+    id: "rune_tome", name: "Runen-Kompendium", description: "Umfassendes Werk über magische Runen und ihre Anwendung.",
+    type: "misc", rarity: "uncommon", weight: 0.5, value: 40,
+    stackable: false, maxStack: 1
+  },
+  // ── Instrumente ───────────────────────────────────────────────
+  lute: {
+    id: "lute", name: "Laute", description: "Handgefertigte Laute – Waffe und Werkzeug des Barden.",
+    type: "misc", rarity: "common", slot: "mainhand", weight: 1.2, value: 30,
+    stackable: false, maxStack: 1,
+    stats: { manaBonus: 15, charismaBonus: 1 }
+  },
   // ── Quest Items ───────────────────────────────────────────────
   ancient_key: {
     id: "ancient_key", name: "Uralter Schlüssel", description: "Öffnet etwas Verborgenes.",
