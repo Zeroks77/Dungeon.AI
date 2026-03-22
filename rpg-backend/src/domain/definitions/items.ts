@@ -2,7 +2,7 @@
 
 export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary"
 export type ItemType = "weapon" | "armor" | "potion" | "ingredient" | "rune" | "quest" | "misc"
-export type DamageType = "physical" | "fire" | "ice" | "lightning" | "poison" | "holy" | "shadow" | "arcane"
+export type DamageType = "physical" | "fire" | "ice" | "lightning" | "poison" | "holy" | "shadow" | "arcane" | "nature" | "death"
 export type EquipSlot = "mainhand" | "offhand" | "head" | "chest" | "legs" | "feet" | "hands" | "ring" | "amulet" | "back"
 
 export type ItemStats = {
