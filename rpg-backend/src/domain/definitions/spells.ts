@@ -522,7 +522,7 @@ export const SPELLS: Record<string, Spell> = {
     id: "power_strike", name: "Kraftschlag", description: "Ein mächtiger Schlag mit doppelter Wucht.",
     school: "arcane", manaCost: 0, castTime: 0, cooldown: 3, range: 1,
     targetType: "single_enemy",
-    effects: [{ type: "damage", damageType: "physical", value: 0, valuePerLevel: 0 }],
+    effects: [{ type: "damage", damageType: "physical", value: 30, valuePerLevel: 5 }],
     requiredLevel: 1, requiredClass: ["warrior"]
   },
   berserker_rage: {
