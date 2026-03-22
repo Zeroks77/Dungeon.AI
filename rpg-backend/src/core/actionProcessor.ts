@@ -7,6 +7,15 @@ import { buildState, applyEvents } from "../domain/events/applyEvent"
 import { validateAction, validateEvent } from "./validation"
 import { buildAIContext } from "../ai/prompts"
 import { callLLM } from "../ai/llmClient"
+import { processCombat } from "../domain/systems/combatSystem"
+import { processCastSpell } from "../domain/systems/spellSystem"
+import { processUseItem, processEquipItem, processUnequipItem } from "../domain/systems/itemSystem"
+import { processBuyItem, processSellItem } from "../domain/systems/economySystem"
+import { processCraftItem } from "../domain/systems/alchemySystem"
+import { processEngraveRune } from "../domain/systems/runeSystem"
+import { processReputationChange } from "../domain/systems/factionSystem"
+import { processGainXP, getXPReward } from "../domain/systems/progressionSystem"
+import { processQuestProgress } from "../domain/systems/questSystem"
 
 export function derivePlayerEvents(action: ActionRequest, tick: number): Event[] {
   switch (action.type) {
@@ -17,15 +26,169 @@ export function derivePlayerEvents(action: ActionRequest, tick: number): Event[]
           type: "PLAYER_MOVED",
           tick,
           entity_id: action.player_id,
+          payload: { to: action.target }
+        }
+      ]
+
+    case "ATTACK":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "ATTACK_ATTEMPT",
+          tick,
+          entity_id: action.player_id,
+          payload: { target: action.target }
+        }
+      ]
+
+    case "CAST_SPELL":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "CAST_SPELL",
+          tick,
+          entity_id: action.player_id,
           payload: {
-            to: action.target
+            spell_id: action.spell_id,
+            target_id: action.target,
+            target_q: (action.target_pos as { q?: number } | undefined)?.q,
+            target_r: (action.target_pos as { r?: number } | undefined)?.r
           }
+        }
+      ]
+
+    case "USE_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "USE_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { item_id: action.item_id, target_id: action.target }
+        }
+      ]
+
+    case "EQUIP_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "EQUIP_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { item_id: action.item_id, slot: action.slot }
+        }
+      ]
+
+    case "UNEQUIP_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "UNEQUIP_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { slot: action.slot }
+        }
+      ]
+
+    case "BUY_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "BUY_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { item_id: action.item_id, merchant_id: action.merchant_id, quantity: action.quantity ?? 1 }
+        }
+      ]
+
+    case "SELL_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "SELL_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { item_id: action.item_id, merchant_id: action.merchant_id, quantity: action.quantity ?? 1 }
+        }
+      ]
+
+    case "CRAFT_ITEM":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "CRAFT_ITEM",
+          tick,
+          entity_id: action.player_id,
+          payload: { recipe_id: action.recipe_id }
+        }
+      ]
+
+    case "ENGRAVE_RUNE":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "ENGRAVE_RUNE",
+          tick,
+          entity_id: action.player_id,
+          payload: { rune_id: action.rune_id, slot: action.slot }
+        }
+      ]
+
+    case "TALK":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "DIALOGUE_STARTED",
+          tick,
+          entity_id: action.player_id,
+          payload: { player_id: action.player_id, npc_id: action.target }
         }
       ]
 
     default:
       return []
   }
+}
+
+// Resolve mechanical consequences of primary events (combat, spells, items, etc.)
+function resolveMechanics(state: GameState, primaryEvents: Event[]): Event[] {
+  const derived: Event[] = []
+  for (const evt of primaryEvents) {
+    derived.push(...processCombat(state, evt))
+    derived.push(...processCastSpell(state, evt))
+    derived.push(...processUseItem(state, evt))
+    derived.push(...processEquipItem(state, evt))
+    derived.push(...processUnequipItem(state, evt))
+    derived.push(...processBuyItem(state, evt))
+    derived.push(...processSellItem(state, evt))
+    derived.push(...processCraftItem(state, evt))
+    derived.push(...processEngraveRune(state, evt))
+    derived.push(...processReputationChange(state, evt))
+    derived.push(...processGainXP(state, evt))
+    derived.push(...processQuestProgress(state, evt))
+  }
+
+  // Award XP when an entity dies
+  for (const evt of primaryEvents) {
+    if (evt.type === "ENTITY_DIED") {
+      const dead = state.entities[(evt.payload as { entity_id: string }).entity_id]
+      if (dead && dead.type === "npc") {
+        const xp = getXPReward(dead, state.tick)
+        // Give XP to whoever was near — simplified: give to attacker (entity_id on ENTITY_DIED = who killed)
+        if (evt.entity_id) {
+          derived.push({
+            id: crypto.randomUUID(),
+            type: "XP_GAINED",
+            tick: state.tick,
+            entity_id: evt.entity_id,
+            payload: { entity_id: evt.entity_id, amount: xp }
+          })
+        }
+      }
+    }
+  }
+
+  return derived
 }
 
 export async function processAction(actionRequest: ActionRequest): Promise<{
@@ -61,15 +224,23 @@ export async function processAction(actionRequest: ActionRequest): Promise<{
     payload: e.payload ?? (e.target ? { target: e.target } : {})
   }))
 
-  const eventsToApply = [...playerEvents, ...aiEvents]
-  const valid = eventsToApply.filter(validateEvent)
+  const primaryEvents = [...playerEvents, ...aiEvents]
+  const validPrimary = primaryEvents.filter(validateEvent)
 
-  applyEvents(state, valid)
+  // Apply primary events to get updated state for mechanical resolution
+  applyEvents(state, validPrimary)
 
-  await appendEvents(valid)
+  // Resolve mechanical consequences
+  const mechanicalEvents = resolveMechanics(state, validPrimary)
+  const validMechanical = mechanicalEvents.filter(validateEvent)
+
+  applyEvents(state, validMechanical)
+
+  const allValid = [...validPrimary, ...validMechanical]
+  await appendEvents(allValid)
 
   return {
-    events: valid,
+    events: allValid,
     narration: aiResponse.narration
   }
 }
