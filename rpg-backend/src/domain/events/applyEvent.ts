@@ -1,4 +1,5 @@
 import { GameState, Event } from "../entities/entity"
+import { createPlayer } from "../entities/player"
 
 export function applyEvent(state: GameState, event: Event): GameState {
   switch (event.type) {
@@ -48,7 +49,18 @@ export function applyEvent(state: GameState, event: Event): GameState {
 
     case "ENTITY_DIED": {
       const payload = event.payload as { entity_id: string }
-      delete state.entities[payload.entity_id]
+      const entity = state.entities[payload.entity_id]
+      if (entity && entity.type === "player") {
+        // Players are never removed from state — mark as dead instead
+        const health = entity.components.health as { hp: number; maxHp: number; isDead?: boolean }
+        if (health) {
+          health.hp = 0
+          health.isDead = true
+        }
+        entity.version++
+      } else {
+        delete state.entities[payload.entity_id]
+      }
       return state
     }
 
@@ -309,6 +321,109 @@ export function applyEvent(state: GameState, event: Event): GameState {
       state.effects = state.effects.filter(
         (e) => (e as { id: string }).id !== payload.effectId
       )
+      return state
+    }
+
+    case "COOLDOWN_SET": {
+      const payload = event.payload as { entity_id: string; spell_id: string; expires_at_tick: number }
+      if (state.entities[payload.entity_id]) {
+        if (!state.entities[payload.entity_id].components.cooldowns) {
+          state.entities[payload.entity_id].components.cooldowns = {}
+        }
+        const cooldowns = state.entities[payload.entity_id].components.cooldowns as Record<string, number>
+        cooldowns[payload.spell_id] = payload.expires_at_tick
+        state.entities[payload.entity_id].version++
+      }
+      return state
+    }
+
+    case "PLAYER_RESPAWNED": {
+      const payload = event.payload as { entity_id: string; position?: { q: number; r: number } }
+      if (state.entities[payload.entity_id]) {
+        const health = state.entities[payload.entity_id].components.health as {
+          hp: number
+          maxHp: number
+          isDead?: boolean
+        }
+        if (health) {
+          health.hp = Math.ceil(health.maxHp / 2)
+          health.isDead = false
+        }
+        state.entities[payload.entity_id].components.position = payload.position ?? { q: 0, r: 0 }
+        state.entities[payload.entity_id].version++
+      }
+      return state
+    }
+
+    case "PLAYER_SPAWNED": {
+      const payload = event.payload as {
+        player_id: string
+        class_id: string
+        race_id: string
+        position: { q: number; r: number }
+      }
+      const player = createPlayer(payload.player_id, payload.position, payload.class_id, payload.race_id)
+      state.entities[payload.player_id] = player
+      return state
+    }
+
+    case "DIALOGUE_STARTED": {
+      const payload = event.payload as { player_id: string; npc_id: string }
+      if (state.entities[payload.player_id]) {
+        const char = state.entities[payload.player_id].components.character as {
+          activeDialogue?: { npcId: string; startedAtTick: number }
+        }
+        if (char) {
+          char.activeDialogue = { npcId: payload.npc_id, startedAtTick: state.tick }
+        }
+        state.entities[payload.player_id].version++
+      }
+      return state
+    }
+
+    case "DIALOGUE_ENDED": {
+      const payload = event.payload as { player_id: string }
+      if (state.entities[payload.player_id]) {
+        const char = state.entities[payload.player_id].components.character as {
+          activeDialogue?: unknown
+        }
+        if (char) {
+          delete char.activeDialogue
+        }
+        state.entities[payload.player_id].version++
+      }
+      return state
+    }
+
+    case "NPC_AGGRO": {
+      const payload = event.payload as { npc_id: string; target_id: string }
+      if (state.entities[payload.npc_id]) {
+        const behavior = state.entities[payload.npc_id].components.behavior as {
+          aggro: boolean
+          targetId?: string
+        }
+        if (behavior) {
+          behavior.aggro = true
+          behavior.targetId = payload.target_id
+        }
+        state.entities[payload.npc_id].version++
+      }
+      return state
+    }
+
+    case "NPC_DEAGGRO": {
+      const payload = event.payload as { npc_id: string }
+      if (state.entities[payload.npc_id]) {
+        const behavior = state.entities[payload.npc_id].components.behavior as {
+          aggro: boolean
+          targetId?: string
+        }
+        if (behavior) {
+          behavior.aggro = false
+          delete behavior.targetId
+        }
+        state.entities[payload.npc_id].version++
+      }
       return state
     }
 

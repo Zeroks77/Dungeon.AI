@@ -1,9 +1,43 @@
 import { GameState, ActionRequest, Event } from "../domain/entities/entity"
+import { hexDistance } from "../domain/components/position"
 
 export function validateAction(action: ActionRequest, state: GameState): void {
-  if (!state.entities[action.player_id]) {
+  // CREATE_PLAYER does not require the entity to exist yet
+  if (action.type !== "CREATE_PLAYER" && !state.entities[action.player_id]) {
     throw new Error("INVALID_PLAYER")
   }
+
+  if (action.type === "CREATE_PLAYER") {
+    if (!action.class_id || typeof action.class_id !== "string") {
+      throw new Error("INVALID_CLASS_ID")
+    }
+    if (!action.race_id || typeof action.race_id !== "string") {
+      throw new Error("INVALID_RACE_ID")
+    }
+    return
+  }
+
+  // ── CC enforcement ────────────────────────────────────────────────────────
+
+  const playerEffectTypes = state.effects
+    .filter((e) => (e as { targetId: string }).targetId === action.player_id)
+    .map((e) => (e as { type: string }).type)
+
+  if (action.type === "MOVE") {
+    if (playerEffectTypes.includes("stun")) throw new Error("PLAYER_STUNNED")
+    if (playerEffectTypes.includes("root")) throw new Error("PLAYER_ROOTED")
+  }
+
+  if (action.type === "ATTACK") {
+    if (playerEffectTypes.includes("stun")) throw new Error("PLAYER_STUNNED")
+  }
+
+  if (action.type === "CAST_SPELL") {
+    if (playerEffectTypes.includes("stun")) throw new Error("PLAYER_STUNNED")
+    if (playerEffectTypes.includes("silence")) throw new Error("PLAYER_SILENCED")
+  }
+
+  // ── Existing field checks ─────────────────────────────────────────────────
 
   if (action.type === "MOVE") {
     const target = action.target
@@ -14,6 +48,17 @@ export function validateAction(action: ActionRequest, state: GameState): void {
       !("r" in target)
     ) {
       throw new Error("INVALID_MOVE_TARGET")
+    }
+
+    // Adjacency check — target must be exactly 1 hex away
+    const playerPos = state.entities[action.player_id]?.components.position as
+      | { q: number; r: number }
+      | undefined
+    if (playerPos) {
+      const dest = target as { q: number; r: number }
+      if (hexDistance(playerPos, dest) > 1) {
+        throw new Error("MOVE_TOO_FAR")
+      }
     }
   }
 

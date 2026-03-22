@@ -22,6 +22,12 @@ export function processCastSpell(state: GameState, event: Event): Event[] {
   const spell = getSpell(payload.spell_id)
   if (!spell) return []
 
+  // Cooldown check
+  const cooldowns = caster.components.cooldowns as Record<string, number> | undefined
+  if (cooldowns && cooldowns[payload.spell_id] !== undefined && state.tick < cooldowns[payload.spell_id]) {
+    return []
+  }
+
   // Mana check
   const mana = caster.components.mana as { mp: number; maxMp: number } | undefined
   if (spell.manaCost > 0) {
@@ -50,6 +56,17 @@ export function processCastSpell(state: GameState, event: Event): Event[] {
       tick,
       entity_id: caster.id,
       payload: { entity_id: caster.id, new_mp: mana.mp - spell.manaCost }
+    })
+  }
+
+  // Set cooldown after a successful cast
+  if (spell.cooldown > 0) {
+    resultEvents.push({
+      id: crypto.randomUUID(),
+      type: "COOLDOWN_SET",
+      tick,
+      entity_id: caster.id,
+      payload: { entity_id: caster.id, spell_id: payload.spell_id, expires_at_tick: tick + spell.cooldown }
     })
   }
 

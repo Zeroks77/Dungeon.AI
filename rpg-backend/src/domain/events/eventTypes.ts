@@ -59,7 +59,18 @@ export const EventTypes = {
   DIALOGUE_ENDED: "DIALOGUE_ENDED",
 
   // Visibility
-  VISIBILITY_UPDATED: "VISIBILITY_UPDATED"
+  VISIBILITY_UPDATED: "VISIBILITY_UPDATED",
+
+  // Cooldowns
+  COOLDOWN_SET: "COOLDOWN_SET",
+
+  // NPC behaviour
+  NPC_AGGRO: "NPC_AGGRO",
+  NPC_DEAGGRO: "NPC_DEAGGRO",
+
+  // Player lifecycle
+  PLAYER_SPAWNED: "PLAYER_SPAWNED",
+  PLAYER_RESPAWNED: "PLAYER_RESPAWNED"
 } as const
 
 export type EventType = (typeof EventTypes)[keyof typeof EventTypes]

@@ -145,6 +145,22 @@ export function derivePlayerEvents(action: ActionRequest, tick: number): Event[]
         }
       ]
 
+    case "CREATE_PLAYER":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "PLAYER_SPAWNED",
+          tick,
+          entity_id: action.player_id,
+          payload: {
+            player_id: action.player_id,
+            class_id: action.class_id as string,
+            race_id: action.race_id as string,
+            position: { q: 0, r: 0 }
+          }
+        }
+      ]
+
     default:
       return []
   }
@@ -184,6 +200,24 @@ function resolveMechanics(state: GameState, primaryEvents: Event[]): Event[] {
             payload: { entity_id: evt.entity_id, amount: xp }
           })
         }
+      }
+    }
+  }
+
+  // Generate PLAYER_RESPAWNED for any ENTITY_DIED targeting a player (from derived events)
+  const derivedSnapshot = [...derived]
+  for (const evt of derivedSnapshot) {
+    if (evt.type === "ENTITY_DIED") {
+      const deadId = (evt.payload as { entity_id: string }).entity_id
+      const dead = state.entities[deadId]
+      if (dead?.type === "player") {
+        derived.push({
+          id: crypto.randomUUID(),
+          type: "PLAYER_RESPAWNED",
+          tick: state.tick,
+          entity_id: dead.id,
+          payload: { entity_id: dead.id, position: { q: 0, r: 0 } }
+        })
       }
     }
   }
