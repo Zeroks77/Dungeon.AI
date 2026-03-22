@@ -7,20 +7,21 @@
     "build": "tsc",
     "start": "node dist/core/gameLoop.js",
     "dev": "ts-node src/core/gameLoop.ts",
+    "db:init": "ts-node src/infrastructure/db/initSqlite.ts",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
   "dependencies": {
+    "better-sqlite3": "^12.8.0",
     "express": "^5.2.1",
     "openai": "^4.0.0",
-    "pg": "^8.11.3",
     "ws": "^8.16.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.0.0",
-    "@types/pg": "^8.11.0",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",

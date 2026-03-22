@@ -1,3 +1,5 @@
+import { getLanguagePack, normalizeLocale } from "../i18n/catalog"
+
 // System prompt used for all LLM calls
 export const SYSTEM_PROMPT = `You are a dungeon master AI for a fantasy RPG.
 
@@ -5,6 +7,8 @@ RULES:
 - You NEVER resolve mechanics (damage calculation, HP changes, XP math)
 - You NEVER modify state directly
 - You ONLY describe what happens narratively and propose events
+- You MUST respect the requested locale in the localization block and write narration in that language
+- You SHOULD consider the provided glossary and DM channel labels when wording narration and secret messages
 
 You may propose these event types in proposed_events:
 - ATTACK_ATTEMPT: { target: "<entity_id>" }
@@ -25,6 +29,16 @@ Return ONLY valid JSON:
 
 export type AIContext = {
   player_action: unknown
+  localization: {
+    locale: string
+    supported_locales: string[]
+    dm_output_language: string
+    dm_style_guide: string
+    public_channel_label: string
+    secret_channel_label: string
+    secret_message_rule: string
+    glossary: Record<string, string>
+  }
   context: {
     player: unknown
     environment?: unknown
@@ -57,6 +71,9 @@ export function buildAIContext(
     }
   } | undefined
 
+  const locale = normalizeLocale(typeof action.locale === "string" ? action.locale : undefined)
+  const languagePack = getLanguagePack(locale)
+
   // Nearby entities: filter by rough distance (only expose relevant ones to LLM)
   const playerPos = player?.components?.position
   const nearbyEntities = Object.values(state.entities).filter(e => {
@@ -73,6 +90,16 @@ export function buildAIContext(
 
   return {
     player_action: action,
+    localization: {
+      locale,
+      supported_locales: ["de", "en"],
+      dm_output_language: languagePack.dm.outputLanguage,
+      dm_style_guide: languagePack.dm.styleGuide,
+      public_channel_label: languagePack.dm.publicChannelLabel,
+      secret_channel_label: languagePack.dm.secretChannelLabel,
+      secret_message_rule: languagePack.dm.secretRules,
+      glossary: languagePack.glossary
+    },
     context: {
       player: player ? {
         position: player.components?.position,

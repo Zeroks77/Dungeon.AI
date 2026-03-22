@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "code": "en",
+    "name": "English"
+  },
+  "dm": {
+    "outputLanguage": "English",
+    "styleGuide": "Dark fantasy, clear, playable, short to medium sentences, do not invent rules.",
+    "publicChannelLabel": "Public DM Message",
+    "secretChannelLabel": "Secret Turn Message",
+    "secretRules": "Secret DM messages are private and should be used at most once per turn.",
+    "turnUnit": "Turn",
+    "dayUnit": "Day"
+  },
+  "glossary": {
+    "turn": "Turn",
+    "day": "Day",
+    "hex": "Hex",
+    "movement": "Movement",
+    "lineOfSight": "Line of sight",
+    "cover": "Cover",
+    "difficultTerrain": "Difficult terrain"
+  },
+  "ui": {
+    "createCharacter": "Create Character",
+    "publicDmMessage": "Visible To All",
+    "secretDmMessage": "Once Per Turn Secret",
+    "mapScale": "1 Hex = 5 Feet"
+  }
+}

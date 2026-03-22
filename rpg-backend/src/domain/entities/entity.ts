@@ -47,6 +47,8 @@ export type Event = {
 export type ActionRequest = {
   type: string
   player_id: string
+  session_id?: string
+  locale?: string
   target?: Hex | string
   [key: string]: unknown
 }

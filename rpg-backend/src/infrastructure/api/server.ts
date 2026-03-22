@@ -10,11 +10,9 @@ import {
   deleteSession
 } from "../eventStore/sessionStore"
 import { createPlayer } from "../../domain/entities/player"
-import { saveSnapshot, loadLatestSnapshot } from "../eventStore/snapshotStore"
-import { buildState } from "../../domain/events/applyEvent"
-import { loadEvents } from "../eventStore/eventStore"
-import { GameState } from "../../domain/entities/entity"
+import { saveSnapshot } from "../eventStore/snapshotStore"
 import { getVisibleTileKeys } from "../../utils/fov"
+import { loadStateForSession } from "../../core/sessionState"
 
 const app = express()
 app.use(express.json())
@@ -65,10 +63,7 @@ app.post("/sessions/:sessionId/players", async (req: Request, res: Response) => 
   const session = await getSession(sessionId)
   if (!session) return res.status(404).json({ error: "Session not found" })
 
-  const snapshot = await loadLatestSnapshot()
-  const baseState: GameState = snapshot ?? { tick: 0, entities: {}, effects: [], sessionId }
-  const events = await loadEvents(baseState.tick)
-  const state = buildState(baseState, events)
+  const state = await loadStateForSession(sessionId)
 
   if (state.entities[playerId]) {
     return res.status(409).json({ error: "Player already exists" })
@@ -88,11 +83,12 @@ app.post("/sessions/:sessionId/players", async (req: Request, res: Response) => 
 })
 
 app.get("/sessions/:sessionId/players/:playerId", async (req: Request, res: Response) => {
+  const sessionId = req.params["sessionId"] as string
   const playerId = req.params["playerId"] as string
-  const snapshot = await loadLatestSnapshot()
-  if (!snapshot) return res.status(404).json({ error: "No game state found" })
-  const events = await loadEvents(snapshot.tick)
-  const state = buildState(snapshot, events)
+  const session = await getSession(sessionId)
+  if (!session) return res.status(404).json({ error: "Session not found" })
+
+  const state = await loadStateForSession(sessionId)
   const player = state.entities[playerId]
   if (!player) return res.status(404).json({ error: "Player not found" })
   return res.json({ player })
@@ -105,14 +101,15 @@ app.post("/actions", (req: Request, res: Response) => {
 })
 
 // ── Visibility (FOV) ─────────────────────────────────────────────────────────
-app.get("/players/:playerId/visible-tiles", async (req: Request, res: Response) => {
+app.get("/sessions/:sessionId/players/:playerId/visible-tiles", async (req: Request, res: Response) => {
+  const sessionId = req.params["sessionId"] as string
   const playerId = req.params["playerId"] as string
   const radius = parseInt((req.query["radius"] as string) ?? "6", 10)
 
-  const snapshot = await loadLatestSnapshot()
-  if (!snapshot) return res.status(404).json({ error: "No game state found" })
-  const events = await loadEvents(snapshot.tick)
-  const state = buildState(snapshot, events)
+  const session = await getSession(sessionId)
+  if (!session) return res.status(404).json({ error: "Session not found" })
+
+  const state = await loadStateForSession(sessionId)
 
   const player = state.entities[playerId]
   if (!player) return res.status(404).json({ error: "Player not found" })
@@ -128,11 +125,12 @@ app.get("/players/:playerId/visible-tiles", async (req: Request, res: Response) 
 })
 
 // ── State query ───────────────────────────────────────────────────────────────
-app.get("/state", async (_req: Request, res: Response) => {
-  const snapshot = await loadLatestSnapshot()
-  if (!snapshot) return res.json({ tick: 0, entities: {}, effects: [] })
-  const events = await loadEvents(snapshot.tick)
-  const state = buildState(snapshot, events)
+app.get("/sessions/:sessionId/state", async (req: Request, res: Response) => {
+  const sessionId = req.params["sessionId"] as string
+  const session = await getSession(sessionId)
+  if (!session) return res.status(404).json({ error: "Session not found" })
+
+  const state = await loadStateForSession(sessionId)
   // Strip large world tiles from state response
   const { worldTiles: _wt, ...stateWithoutTiles } = state
   return res.json(stateWithoutTiles)

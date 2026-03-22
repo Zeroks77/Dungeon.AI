@@ -7,14 +7,20 @@ const PORT = parseInt(process.env.WS_PORT ?? "3001", 10)
 
 const wss = new WebSocket.Server({ port: PORT })
 
+type ClientInfo = { playerId?: string; sessionId?: string }
+
 // Track connected clients with their player IDs
-const clientMap = new Map<WebSocket, { playerId?: string }>()
+const clientMap = new Map<WebSocket, ClientInfo>()
+
+function connectionKey(sessionId: string, playerId: string): string {
+  return `${sessionId}:${playerId}`
+}
 
 /** Maps player_id → active WebSocket connection (for targeted messages) */
 export const playerConnections = new Map<string, WebSocket>()
 
-export function broadcastToPlayer(playerId: string, message: unknown): void {
-  const ws = playerConnections.get(playerId)
+export function broadcastToPlayer(sessionId: string, playerId: string, message: unknown): void {
+  const ws = playerConnections.get(connectionKey(sessionId, playerId))
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(message))
   }
@@ -32,17 +38,26 @@ wss.on("connection", (ws) => {
 
       if (data.type === "PLAYER_ACTION") {
         const action = data.payload as ActionRequest
+        if (!action.session_id) {
+          ws.send(JSON.stringify({ type: "ERROR", message: "SESSION_ID_REQUIRED" }))
+          return
+        }
         if (action.player_id) {
-          playerConnections.set(action.player_id, ws)
+          clientMap.set(ws, { playerId: action.player_id, sessionId: action.session_id })
+          playerConnections.set(connectionKey(action.session_id, action.player_id), ws)
         }
         enqueue(action)
       }
 
       if (data.type === "IDENTIFY") {
-        const { player_id } = data.payload as { player_id: string }
-        clientMap.set(ws, { playerId: player_id })
-        playerConnections.set(player_id, ws)
-        ws.send(JSON.stringify({ type: "IDENTIFIED", player_id }))
+        const { player_id, session_id } = data.payload as { player_id: string; session_id?: string }
+        if (!session_id) {
+          ws.send(JSON.stringify({ type: "ERROR", message: "SESSION_ID_REQUIRED" }))
+          return
+        }
+        clientMap.set(ws, { playerId: player_id, sessionId: session_id })
+        playerConnections.set(connectionKey(session_id, player_id), ws)
+        ws.send(JSON.stringify({ type: "IDENTIFIED", player_id, session_id }))
       }
 
     } catch (err) {
@@ -53,9 +68,9 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     clientMap.delete(ws)
-    for (const [playerId, conn] of playerConnections.entries()) {
+    for (const [playerKey, conn] of playerConnections.entries()) {
       if (conn === ws) {
-        playerConnections.delete(playerId)
+        playerConnections.delete(playerKey)
         break
       }
     }
@@ -75,6 +90,7 @@ wss.on("error", (err: Error) => {
 export function broadcastStateUpdate(state: GameState, changedEvents: unknown[]): void {
   for (const [ws, info] of clientMap.entries()) {
     if (ws.readyState !== WebSocket.OPEN) continue
+    if (info.sessionId !== state.sessionId) continue
 
     const playerId = info.playerId
 
@@ -108,6 +124,7 @@ export function broadcastStateUpdate(state: GameState, changedEvents: unknown[])
 
     ws.send(JSON.stringify({
       type: "STATE_UPDATE",
+      session_id: state.sessionId,
       tick: state.tick,
       timeOfDay: state.timeOfDay,
       weather: state.weather,
@@ -121,9 +138,9 @@ export function broadcastStateUpdate(state: GameState, changedEvents: unknown[])
 }
 
 // Send a targeted message to a specific player
-export function sendToPlayer(playerId: string, message: unknown): boolean {
+export function sendToPlayer(sessionId: string, playerId: string, message: unknown): boolean {
   for (const [ws, info] of clientMap.entries()) {
-    if (info.playerId === playerId && ws.readyState === WebSocket.OPEN) {
+    if (info.playerId === playerId && info.sessionId === sessionId && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message))
       return true
     }

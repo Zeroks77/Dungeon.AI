@@ -1,9 +1,6 @@
 import { ActionRequest, Event, GameState } from "../domain/entities/entity"
-import {
-  loadLatestSnapshot
-} from "../infrastructure/eventStore/snapshotStore"
-import { loadEvents, appendEvents } from "../infrastructure/eventStore/eventStore"
-import { buildState, applyEvents } from "../domain/events/applyEvent"
+import { appendEvents } from "../infrastructure/eventStore/eventStore"
+import { applyEvents } from "../domain/events/applyEvent"
 import { validateAction, validateEvent } from "./validation"
 import { buildAIContext } from "../ai/prompts"
 import { callLLM } from "../ai/llmClient"
@@ -18,6 +15,7 @@ import { processGainXP, getXPReward } from "../domain/systems/progressionSystem"
 import { processQuestProgress } from "../domain/systems/questSystem"
 import { processTalk, processDialogueChoice } from "../domain/systems/dialogueSystem"
 import { processForage } from "../domain/systems/forageSystem"
+import { loadStateForSession } from "./sessionState"
 
 export function derivePlayerEvents(action: ActionRequest, tick: number): Event[] {
   switch (action.type) {
@@ -267,21 +265,17 @@ export async function processAction(
   narration: string
   state: GameState
 }> {
-  let state: GameState
+  let state = existingState
 
-  if (existingState) {
-    // Use the provided state (from game loop) — no DB round-trip needed
-    state = existingState
-  } else {
-    const snapshot = await loadLatestSnapshot()
-    const baseState: GameState = snapshot ?? {
-      tick: 0,
-      entities: {},
-      effects: []
+  if (!state) {
+    if (!actionRequest.session_id) {
+      throw new Error("SESSION_ID_REQUIRED")
     }
-    const events = await loadEvents(baseState.tick)
-    state = buildState(baseState, events)
+
+    state = await loadStateForSession(actionRequest.session_id)
   }
+
+  state.sessionId = state.sessionId ?? actionRequest.session_id
 
   validateAction(actionRequest, state)
 
@@ -314,7 +308,11 @@ export async function processAction(
   applyEvents(state, validMechanical)
 
   const allValid = [...validPrimary, ...validMechanical]
-  await appendEvents(allValid)
+  if (!state.sessionId) {
+    throw new Error("SESSION_ID_REQUIRED")
+  }
+
+  await appendEvents(allValid, state.sessionId)
 
   return {
     events: allValid,

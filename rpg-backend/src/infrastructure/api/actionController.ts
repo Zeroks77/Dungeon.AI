@@ -11,6 +11,10 @@ export function handleAction(req: { body: unknown }): {
     return { status: 400, body: { error: "INVALID_ACTION" } }
   }
 
+  if (!action.session_id || typeof action.session_id !== "string") {
+    return { status: 400, body: { error: "SESSION_ID_REQUIRED" } }
+  }
+
   enqueue(action)
   return { status: 202, body: { queued: true } }
 }

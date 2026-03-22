@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "code": "de",
+    "name": "Deutsch"
+  },
+  "dm": {
+    "outputLanguage": "Deutsch",
+    "styleGuide": "Dunkle Fantasy, klar, spielbar, kurze bis mittlere Saetze, keine Regeln erfinden.",
+    "publicChannelLabel": "Oeffentliche DM-Nachricht",
+    "secretChannelLabel": "Geheime Turn-Nachricht",
+    "secretRules": "Geheime DM-Nachrichten sind privat und sollen hoechstens einmal pro Turn ausgespielt werden.",
+    "turnUnit": "Turn",
+    "dayUnit": "Tag"
+  },
+  "glossary": {
+    "turn": "Turn",
+    "day": "Tag",
+    "hex": "Hex",
+    "movement": "Bewegung",
+    "lineOfSight": "Sichtlinie",
+    "cover": "Deckung",
+    "difficultTerrain": "Schwieriges Gelaende"
+  },
+  "ui": {
+    "createCharacter": "Charakter erstellen",
+    "publicDmMessage": "Fuer alle sichtbar",
+    "secretDmMessage": "1x pro Turn geheim",
+    "mapScale": "1 Hex = 5 Foot"
+  }
+}

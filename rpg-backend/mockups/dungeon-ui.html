@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dungeon.AI Playable Mockup</title>
+  <style>
+    :root {
+      --bg-1: #0b0f13;
+      --bg-2: #141b22;
+      --panel: rgba(20, 26, 33, 0.9);
+      --panel-strong: rgba(12, 16, 21, 0.96);
+      --line: rgba(240, 192, 108, 0.18);
+      --accent: #f0c06c;
+      --accent-2: #d97846;
+      --text: #f6f0e2;
+      --muted: #a59b8c;
+      --ok: #6bb68e;
+      --warn: #cb8a59;
+      --danger: #d16161;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Cambria, Georgia, serif;
+      background:
+        radial-gradient(circle at top left, rgba(240, 192, 108, 0.09), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(181, 88, 50, 0.12), transparent 34%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 390px;
+      gap: 18px;
+      padding: 18px;
+      min-height: 100vh;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent);
+    }
+
+    .panel-header h2,
+    .panel-header h3,
+    .panel-header p { margin: 0; }
+
+    .chip, .tag, .tiny {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .left-col, .right-col, .center-col {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .brand {
+      padding: 22px;
+      background: linear-gradient(180deg, rgba(240, 192, 108, 0.12), transparent);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand h1 {
+      margin: 8px 0 10px;
+      font-size: 2rem;
+    }
+
+    .muted { color: var(--muted); }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .card {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .card strong { display: block; margin-bottom: 6px; }
+
+    .dm-console {
+      background: linear-gradient(180deg, rgba(240, 192, 108, 0.16), rgba(255,255,255,0.02));
+      border: 1px solid rgba(240, 192, 108, 0.28);
+    }
+
+    .dm-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      padding: 18px;
+    }
+
+    .dm-box {
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(10, 13, 17, 0.5);
+      padding: 14px;
+      min-height: 170px;
+    }
+
+    .dm-box.public {
+      border-color: rgba(107, 182, 142, 0.24);
+    }
+
+    .dm-box.secret {
+      border-color: rgba(209, 97, 97, 0.24);
+    }
+
+    .dm-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(240, 192, 108, 0.2);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .hero {
+      padding: 18px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: 1.9rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .center-col {
+      grid-template-rows: auto auto 1fr auto;
+    }
+
+    .map-toolbar {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      padding: 16px 18px 0;
+    }
+
+    .tool {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.88rem;
+    }
+
+    .map-panel {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .map-meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .meta-tile {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .map-stage {
+      position: relative;
+      min-height: 680px;
+      border-radius: 26px;
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(240, 192, 108, 0.08), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      overflow: hidden;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .legend, .tile-readout {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(8, 11, 14, 0.72);
+      border: 1px solid rgba(255,255,255,0.06);
+      max-width: 340px;
+    }
+
+    .legend-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .hex-board {
+      position: absolute;
+      inset: 90px 24px 28px;
+      display: grid;
+      gap: 7px;
+      justify-content: center;
+      align-content: center;
+    }
+
+    .hex-row {
+      display: flex;
+      gap: 7px;
+      transform: translateX(var(--offset, 0));
+    }
+
+    .hex {
+      width: 74px;
+      height: 84px;
+      clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(78, 101, 70, 0.9), rgba(35, 44, 38, 0.95));
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 8px;
+      color: rgba(255,255,255,0.68);
+      font-size: 0.72rem;
+    }
+
+    .hex.water { background: linear-gradient(180deg, rgba(66, 101, 140, 0.95), rgba(26, 40, 55, 0.96)); }
+    .hex.road { background: linear-gradient(180deg, rgba(124, 103, 77, 0.95), rgba(67, 52, 38, 0.96)); }
+    .hex.ruin { background: linear-gradient(180deg, rgba(96, 86, 79, 0.95), rgba(44, 37, 34, 0.96)); }
+    .hex.forest { background: linear-gradient(180deg, rgba(55, 84, 52, 0.96), rgba(20, 33, 24, 0.98)); }
+    .hex.difficult { box-shadow: inset 0 0 0 2px rgba(203, 138, 89, 0.35); }
+    .hex.cover::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(240, 192, 108, 0.88);
+    }
+
+    .token {
+      position: absolute;
+      top: 19px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      box-shadow: 0 0 18px currentColor;
+    }
+
+    .token.player { color: var(--accent); background: var(--accent); }
+    .token.enemy { color: var(--danger); background: var(--danger); }
+    .token.poi { color: var(--ok); background: var(--ok); }
+
+    .grid-note {
+      position: absolute;
+      bottom: 16px;
+      right: 18px;
+      z-index: 2;
+    }
+
+    .action-bar {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    .action-card {
+      padding: 13px;
+      border-radius: 16px;
+      border: 1px solid rgba(240, 192, 108, 0.16);
+      background: linear-gradient(180deg, rgba(240, 192, 108, 0.08), rgba(255,255,255,0.03));
+    }
+
+    .action-card strong { display: block; margin-bottom: 6px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .field input, .field select, .field textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(7, 10, 13, 0.72);
+      color: var(--text);
+      padding: 11px 12px;
+      font: inherit;
+    }
+
+    .field textarea { min-height: 92px; resize: vertical; }
+
+    .two-up {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .status-list {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .bar {
+      margin-top: 8px;
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+
+    .bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #f8ddb1);
+    }
+
+    .bar.hp > div { background: linear-gradient(90deg, #d16161, #f3a182); }
+    .bar.mana > div { background: linear-gradient(90deg, #547ecf, #7ac5f1); }
+
+    @media (max-width: 1400px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .dm-grid,
+      .hero-grid,
+      .two-up,
+      .action-bar,
+      .map-meta,
+      .map-toolbar,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="left-col">
+      <section class="panel">
+        <div class="brand">
+          <small class="muted">Dungeon.AI</small>
+          <h1>Session Director</h1>
+          <p class="muted">Gedacht fuer eine spielbare Oberfläche mit Turn-Logik, mehr taktischer Kartenlesbarkeit und eingebauter Sprachwahl fuer spaetere Languagefiles.</p>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+            <div class="chip">Turns statt Ticks</div>
+            <div class="chip">1 Hex = 5 Foot</div>
+            <div class="chip">DM + Secret Notes</div>
+          </div>
+        </div>
+        <div class="panel-header">
+          <h2>Sessions</h2>
+          <div class="tag">3 aktiv</div>
+        </div>
+        <div class="stack">
+          <div class="card" style="border-color: rgba(240, 192, 108, 0.28);">
+            <strong>Die Asche von Thornwall</strong>
+            <div class="muted">Tag 3, Turn 7, Abendwache</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+              <div class="tiny">2 Spieler</div>
+              <div class="tiny">Wetter: Nieselregen</div>
+            </div>
+          </div>
+          <div class="card">
+            <strong>Gruft unter dem Moor</strong>
+            <div class="muted">Tag 1, Turn 4</div>
+          </div>
+          <div class="card">
+            <strong>Salzpfad nach Khar</strong>
+            <div class="muted">Tag 6, Turn 11</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Charakter erstellen</h3>
+          <div class="tag">Mockup</div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Name</label>
+            <input value="Serah Vael" />
+          </div>
+          <div class="field">
+            <label>Sprache</label>
+            <select>
+              <option>Deutsch</option>
+              <option>English</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Klasse</label>
+            <select>
+              <option>Runenklinge</option>
+              <option>Waldlaeufer</option>
+              <option>Arkanist</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Volk</label>
+            <select>
+              <option>Mensch</option>
+              <option>Zwerg</option>
+              <option>Waldkind</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Herkunft</label>
+            <select>
+              <option>Grenzland</option>
+              <option>Stadtstaat</option>
+              <option>Kloster</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Startrolle</label>
+            <select>
+              <option>Vorne / Nahkampf</option>
+              <option>Mitte / Support</option>
+              <option>Hinten / Fernkampf</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Praegung / Motivation</label>
+            <textarea>Ich suche Antworten ueber den versiegelten Glockenturm und nehme dafuer riskante Auftraege an.</textarea>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="center-col">
+      <section class="panel dm-console">
+        <div class="panel-header">
+          <h2>DM Fenster</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div class="tag">Prominent</div>
+            <div class="tag">Public + Secret</div>
+          </div>
+        </div>
+        <div class="dm-grid">
+          <div class="dm-box public">
+            <strong>Fuer alle sichtbar</strong>
+            <p class="muted">Die Glocke unter dem Nebel schlaegt ein einziges Mal. Lose Steine rutschen vom Hang, und alle in Sichtweite spüren, dass sich etwas Grosses bewegt.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+              <div class="tiny">Broadcast</div>
+              <div class="tiny">Narration</div>
+              <div class="tiny">Turn 7</div>
+            </div>
+          </div>
+          <div class="dm-actions">
+            <div class="dm-box secret">
+              <strong>1x pro Turn geheim</strong>
+              <p class="muted">Nur Serah bemerkt, dass in Hex E4 eine schwache Runenspur unter dem Wasser schimmert. Diese Nachricht ist privat und turn-limitiert.</p>
+            </div>
+            <button class="btn">Oeffentliche DM-Nachricht verfassen</button>
+            <button class="btn">Geheime Turn-Nachricht an Spieler</button>
+            <button class="btn">Sprachpaket an LLM senden: de / en</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel hero">
+        <div class="hero-grid">
+          <div>
+            <h2>Taktisches Feld mit Turn-Logik und klarer 5-Foot-Skala</h2>
+            <p class="muted">Die Karte sollte spielrelevant lesbar sein: Deckung, schwieriges Gelaende, Wasser, Ruinen, POIs, Gegnerreichweite, Sichtlinien und genaue Turn-Informationen statt abstrakter Tick-Zahlen.</p>
+            <div class="hero-meta">
+              <div class="chip">Tag 3</div>
+              <div class="chip">Turn 7</div>
+              <div class="chip">Initiative: Gruppe zuerst</div>
+              <div class="chip">Sprache: Deutsch</div>
+            </div>
+          </div>
+          <div class="card" style="min-width: 220px;">
+            <strong>Turn-Struktur</strong>
+            <div class="muted">1 Turn = eine klare Spielfenster-Einheit mit Bewegung, Hauptaktion, Bonusaktion, Reaktion und optional 1 geheimer DM-Notiz.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel map-panel">
+        <div class="map-toolbar">
+          <div class="tool">Move 30 Foot</div>
+          <div class="tool">Attack Range 1 Hex</div>
+          <div class="tool">Spell Overlay</div>
+          <div class="tool">LOS / Cover</div>
+          <div class="tool">Danger Heatmap</div>
+          <div class="tool">DM Layer</div>
+        </div>
+        <div class="map-meta">
+          <div class="meta-tile"><strong>Skala</strong><div class="muted">1 Hex = 5 Foot</div></div>
+          <div class="meta-tile"><strong>Bewegung</strong><div class="muted">6 Hex pro Standardzug</div></div>
+          <div class="meta-tile"><strong>Sicht</strong><div class="muted">Nebel, Regen, Ruinenkanten</div></div>
+          <div class="meta-tile"><strong>Turnstatus</strong><div class="muted">Secret Note noch verfuegbar</div></div>
+        </div>
+        <div class="map-stage">
+          <div class="map-overlay">
+            <div class="legend">
+              <strong>Kartenlegende</strong>
+              <div class="legend-list">
+                <div>Goldpunkt = Deckung</div>
+                <div>Rahmen in Bernstein = schwieriges Gelaende</div>
+                <div>Gruener Marker = Point of Interest</div>
+                <div>Rot = Gegnerkontakt</div>
+              </div>
+            </div>
+            <div class="tile-readout">
+              <strong>Hex E4</strong>
+              <div class="muted">Flaches Wasser, schwieriges Gelaende, halbe Deckung am gebrochenen Pfeiler, schwache Runenspur.</div>
+            </div>
+          </div>
+          <div class="hex-board">
+            <div class="hex-row" style="--offset: 40px;">
+              <div class="hex forest">A1</div>
+              <div class="hex forest cover">B1</div>
+              <div class="hex road">C1</div>
+              <div class="hex road">D1</div>
+              <div class="hex ruin cover">E1<div class="token poi"></div></div>
+              <div class="hex ruin">F1</div>
+            </div>
+            <div class="hex-row">
+              <div class="hex forest">A2</div>
+              <div class="hex forest difficult">B2</div>
+              <div class="hex road">C2</div>
+              <div class="hex road">D2<div class="token enemy"></div></div>
+              <div class="hex ruin">E2</div>
+              <div class="hex ruin cover">F2</div>
+            </div>
+            <div class="hex-row" style="--offset: 40px;">
+              <div class="hex forest">A3</div>
+              <div class="hex road">B3</div>
+              <div class="hex road">C3<div class="token player"></div></div>
+              <div class="hex road cover">D3</div>
+              <div class="hex water difficult">E3</div>
+              <div class="hex ruin">F3</div>
+            </div>
+            <div class="hex-row">
+              <div class="hex forest cover">A4</div>
+              <div class="hex road">B4</div>
+              <div class="hex road">C4</div>
+              <div class="hex water difficult cover">D4</div>
+              <div class="hex water difficult">E4</div>
+              <div class="hex ruin"><div class="token enemy"></div>F4</div>
+            </div>
+            <div class="hex-row" style="--offset: 40px;">
+              <div class="hex forest">A5</div>
+              <div class="hex road">B5</div>
+              <div class="hex road">C5</div>
+              <div class="hex water">D5</div>
+              <div class="hex water cover">E5</div>
+              <div class="hex ruin">F5</div>
+            </div>
+            <div class="hex-row">
+              <div class="hex forest">A6</div>
+              <div class="hex forest difficult">B6</div>
+              <div class="hex road">C6</div>
+              <div class="hex road">D6</div>
+              <div class="hex ruin cover">E6</div>
+              <div class="hex ruin">F6<div class="token poi"></div></div>
+            </div>
+          </div>
+          <div class="grid-note chip">5-Foot-Grid mit Hex-Koordinaten und taktischen Layern</div>
+        </div>
+        <div class="action-bar">
+          <div class="action-card"><strong>Bewegen</strong><div class="muted">Pfadvorschau in Hex-Schritten.</div></div>
+          <div class="action-card"><strong>Angriff</strong><div class="muted">Nahkampf, Reichweite, Deckung.</div></div>
+          <div class="action-card"><strong>Zauber</strong><div class="muted">AOE, Sichtlinie, Spracheffekte.</div></div>
+          <div class="action-card"><strong>Interagieren</strong><div class="muted">Loot, Hebel, Dialog, Fallen.</div></div>
+          <div class="action-card"><strong>Bonusaktion</strong><div class="muted">Trank, Fokus, Step, Ruf.</div></div>
+          <div class="action-card"><strong>Turn beenden</strong><div class="muted">DM bekommt Secret-Window-Reset.</div></div>
+        </div>
+      </section>
+    </section>
+
+    <aside class="right-col">
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Spielerstatus</h3>
+          <div class="tag">Runenklinge</div>
+        </div>
+        <div class="status-list">
+          <div>
+            <div class="status-row"><span>HP</span><span>84 / 110</span></div>
+            <div class="bar hp"><div style="width: 76%"></div></div>
+          </div>
+          <div>
+            <div class="status-row"><span>Mana</span><span>31 / 48</span></div>
+            <div class="bar mana"><div style="width: 64%"></div></div>
+          </div>
+          <div>
+            <div class="status-row"><span>XP bis Level</span><span>190 / 250</span></div>
+            <div class="bar"><div style="width: 76%"></div></div>
+          </div>
+          <div class="status-row"><span>Initiative</span><span>12</span></div>
+          <div class="status-row"><span>Geschwindigkeit</span><span>30 Foot</span></div>
+          <div class="status-row"><span>Reaktion</span><span>Noch frei</span></div>
+          <div class="status-row"><span>Secret DM Hint</span><span>1 erhalten</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Questlog & DM Feed</h3>
+          <div class="tag">spielbar gedacht</div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <strong>Quest: Die Glocke im Nebel</strong>
+            <div class="muted">Erreiche den Turm. Sichere den unteren Zugang. Finde die Quelle des Glockenschlags.</div>
+          </div>
+          <div class="card">
+            <strong>Oeffentliche Folge</strong>
+            <div class="muted">Alle sehen den Feind in D2 in Alarmbereitschaft gehen.</div>
+          </div>
+          <div class="card">
+            <strong>Geheime Folge</strong>
+            <div class="muted">Nur du erkennst in E4 eine versunkene Inschrift, die auf ein alternatives Ziel hinweist.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Localization Headspace</h3>
+          <div class="tag">de / en</div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <strong>Languagefiles</strong>
+            <div class="muted">UI-Texte, Glossar, DM-Kanalbezeichnungen und Stilrichtlinien sollten pro Sprache in eigenen Dateien liegen.</div>
+          </div>
+          <div class="card">
+            <strong>LLM Kontext</strong>
+            <div class="muted">Locale, Glossar, Ausgabesprache und Secret-Message-Regel werden dem DM-LLM zusammen mit dem Spielzustand mitgegeben.</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>
