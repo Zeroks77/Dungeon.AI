@@ -212,7 +212,7 @@ export const RUNES: Record<string, Rune> = {
     value: 110, requiredLevel: 6
   },
   spell_penetration: {
-    id: "spell_penetration", name: "Zauberurchdringung", description: "Reduziert Elementarresistenz des Gegners um 15%.",
+    id: "spell_penetration", name: "Zauberdurchdringung", description: "Reduziert Elementarresistenz des Gegners um 15%.",
     tier: "major", allowedSlots: ["mainhand", "amulet"],
     effect: { type: "spell_penetration", value: 0.15 },
     value: 130, requiredLevel: 7
@@ -382,7 +382,7 @@ export const RUNE_COMBOS: Record<string, RuneCombo> = {
   fortress: {
     id: "fortress",
     name: "Festung",
-    description: "Verteidigung und Vitalität verbinden sich zur uneinnehmlichen Festung.",
+    description: "Verteidigung und Vitalität verbinden sich zur uneinnehmbare Festung.",
     requiredRunes: ["major_defense", "major_vitality"],
     bonusEffect: { type: "add_hp", value: 30 },
     tier: "major"
