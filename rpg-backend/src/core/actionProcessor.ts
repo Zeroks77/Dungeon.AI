@@ -16,6 +16,8 @@ import { processEngraveRune } from "../domain/systems/runeSystem"
 import { processReputationChange } from "../domain/systems/factionSystem"
 import { processGainXP, getXPReward } from "../domain/systems/progressionSystem"
 import { processQuestProgress } from "../domain/systems/questSystem"
+import { processTalk, processDialogueChoice } from "../domain/systems/dialogueSystem"
+import { processForage } from "../domain/systems/forageSystem"
 
 export function derivePlayerEvents(action: ActionRequest, tick: number): Event[] {
   switch (action.type) {
@@ -145,6 +147,33 @@ export function derivePlayerEvents(action: ActionRequest, tick: number): Event[]
         }
       ]
 
+    case "DIALOGUE_CHOICE":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "DIALOGUE_CHOICE",
+          tick,
+          entity_id: action.player_id,
+          payload: {
+            npc_id: action.npc_id,
+            dialogue_tree_id: action.dialogue_tree_id,
+            node_id: action.node_id,
+            option_id: action.option_id
+          }
+        }
+      ]
+
+    case "FORAGE":
+      return [
+        {
+          id: crypto.randomUUID(),
+          type: "FORAGE",
+          tick,
+          entity_id: action.player_id,
+          payload: { player_id: action.player_id }
+        }
+      ]
+
     default:
       return []
   }
@@ -166,6 +195,9 @@ function resolveMechanics(state: GameState, primaryEvents: Event[]): Event[] {
     derived.push(...processReputationChange(state, evt))
     derived.push(...processGainXP(state, evt))
     derived.push(...processQuestProgress(state, evt))
+    derived.push(...processTalk(state, evt))
+    derived.push(...processDialogueChoice(state, evt))
+    derived.push(...processForage(state, evt))
   }
 
   // Award XP when an entity dies
@@ -174,14 +206,15 @@ function resolveMechanics(state: GameState, primaryEvents: Event[]): Event[] {
       const dead = state.entities[(evt.payload as { entity_id: string }).entity_id]
       if (dead && dead.type === "npc") {
         const xp = getXPReward(dead, state.tick)
-        // Give XP to whoever was near — simplified: give to attacker (entity_id on ENTITY_DIED = who killed)
-        if (evt.entity_id) {
+        // killed_by field contains who killed the entity
+        const killerId = (evt.payload as { killed_by?: string }).killed_by ?? evt.entity_id
+        if (killerId) {
           derived.push({
             id: crypto.randomUUID(),
             type: "XP_GAINED",
             tick: state.tick,
-            entity_id: evt.entity_id,
-            payload: { entity_id: evt.entity_id, amount: xp }
+            entity_id: killerId,
+            payload: { entity_id: killerId, amount: xp }
           })
         }
       }
@@ -191,20 +224,30 @@ function resolveMechanics(state: GameState, primaryEvents: Event[]): Event[] {
   return derived
 }
 
-export async function processAction(actionRequest: ActionRequest): Promise<{
+// processAction now accepts an optional pre-loaded state for efficiency (game loop usage)
+export async function processAction(
+  actionRequest: ActionRequest,
+  existingState?: GameState
+): Promise<{
   events: Event[]
   narration: string
+  state: GameState
 }> {
-  const snapshot = await loadLatestSnapshot()
+  let state: GameState
 
-  const baseState: GameState = snapshot ?? {
-    tick: 0,
-    entities: {},
-    effects: []
+  if (existingState) {
+    // Use the provided state (from game loop) — no DB round-trip needed
+    state = existingState
+  } else {
+    const snapshot = await loadLatestSnapshot()
+    const baseState: GameState = snapshot ?? {
+      tick: 0,
+      entities: {},
+      effects: []
+    }
+    const events = await loadEvents(baseState.tick)
+    state = buildState(baseState, events)
   }
-
-  const events = await loadEvents(baseState.tick)
-  const state = buildState(baseState, events)
 
   validateAction(actionRequest, state)
 
@@ -241,6 +284,7 @@ export async function processAction(actionRequest: ActionRequest): Promise<{
 
   return {
     events: allValid,
-    narration: aiResponse.narration
+    narration: aiResponse.narration,
+    state
   }
 }

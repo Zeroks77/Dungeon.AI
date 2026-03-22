@@ -312,6 +312,25 @@ export function applyEvent(state: GameState, event: Event): GameState {
       return state
     }
 
+    case "DIALOGUE_NODE_SHOWN":
+    case "DIALOGUE_ENDED":
+    case "NPC_AGGROED":
+    case "FORAGE_SUCCESS":
+    case "FORAGE_FAILED": {
+      // Read-only notification events — no state mutation needed
+      return state
+    }
+
+    case "DIALOGUE_CHOICE": {
+      // Processed by dialogueSystem to produce DIALOGUE_NODE_SHOWN — no direct state mutation
+      return state
+    }
+
+    case "DIALOGUE_STARTED": {
+      // Processed by dialogueSystem — no direct state mutation
+      return state
+    }
+
     default:
       return state
   }
